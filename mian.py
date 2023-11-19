@@ -1,7 +1,7 @@
 import pygame
 import mateo
 import math
-import random
+from random import randint
 from time import sleep
 pygame.init()
 
@@ -227,7 +227,26 @@ class Bullet(pygame.sprite.Sprite):
         
         if 1 >= self.y or self.y >= 10:
             self.kill()
-        
+
+
+def button(x, y, wid, hig, text,size, textx = 0):
+    mouse = pygame.mouse.get_pos()
+    mouse = pygame.Rect(mouse[0],mouse[1],1,1) 
+
+    button = pygame.Rect(x,y,wid,hig)
+    if button.colliderect(mouse):
+        pygame.draw.rect(screen, BLUE, pygame.Rect(x-5,y-5,wid+10,hig+10), 5)
+
+    pygame.draw.rect(screen, BLACK, button, 5)
+    font = pygame.font.Font(f"{phat}font\\Anton\\Anton-Regular.ttf", size)
+    text = font.render(text, True, BLACK)
+    screen.blit(text,(x+30-textx,y-4))
+
+    press = False
+    if button.colliderect(mouse) and pygame.mouse.get_pressed()[0]:
+        press = True
+
+    return press
 
 
 class Game():
@@ -235,6 +254,7 @@ class Game():
         self.scen = 'menu'
         self.enemyNum = 0
         self.lvl = 1
+        self.new = True
 
 
     def menu(self):
@@ -251,24 +271,6 @@ class Game():
         player.x = 11
         player.draw()
 
-        mouse = pygame.mouse.get_pos()
-        mouse = pygame.Rect(mouse[0],mouse[1],1,1) 
-
-        def button(x, y, wid, hig, text,size, textx = 0):
-            button = pygame.Rect(x,y,wid,hig)
-            if button.colliderect(mouse):
-                pygame.draw.rect(screen, BLUE, pygame.Rect(x-5,y-5,wid+10,hig+10), 5)
-
-            pygame.draw.rect(screen, BLACK, button, 5)
-            font = pygame.font.Font(f"{phat}font\\Anton\\Anton-Regular.ttf", size)
-            text = font.render(text, True, BLACK)
-            screen.blit(text,(x+30-textx,y-4))
-
-            press = False
-            if button.colliderect(mouse) and pygame.mouse.get_pressed()[0]:
-                press = True
-
-            return press
         
         # play    
         if button(100,100,250,150,'PLAY',105):
@@ -304,6 +306,26 @@ class Game():
 
 
     def game(self, frame):
+        #reset/next room shuffle
+        if self.new:
+            player.x = 1
+            player.y = 6
+
+            random = [randint(5,14), randint(1,10)]
+            while mapp[random[1]][random[0]] != 3:
+                random = [randint(5,14), randint(1,10)]
+                print('relocate enemy')
+            
+            hp = self.lvl
+            if hp > 10:
+                self.hp = 10
+            enemyGroupe.add(Enemy(randint(5,14), randint(1,10), randint(hp - randint(0, int(hp / 4)), hp)))
+            self.new = False
+
+            #more enemy?
+            #random mapp
+
+
         key = pygame.key.get_pressed()
         # save
         if key[pygame.K_s] and key[pygame.K_LCTRL] and False:
@@ -354,12 +376,22 @@ class Game():
         player.draw()
         
 
-        # line
+        # line and number
         if False:
             for i in range(len(mapp[0])):
                 pygame.draw.line(screen, PURPLE, (i * cwid, 0), (i * cwid, hig), 1)
             for i in range(len(mapp)):
                 pygame.draw.line(screen, PURPLE, (0, i * chig), (wid, i * chig), 1)
+
+
+            font = pygame.font.Font(f"{phat}font\\Anton\\Anton-Regular.ttf", 15)
+
+            for i in range(len(mapp)):
+                for j in range(len(mapp[i])):
+                    text = font.render(str(mapp[i][j]), True, BLACK)
+                    screen.blit(text,(j*50 + 20, i*50))
+                    text = font.render(str(items[mapp[i][j]]), True, BLACK)
+                    screen.blit(text,(j*50 + 10, i*50 + 20))
             
 
         #mouse
@@ -369,11 +401,22 @@ class Game():
 
         pygame.draw.rect(screen, WHITE, (j * cwid, i * chig, cwid, chig), 2)
 
-        if (player.x == 0 and player.y == 0) and self.enemyNum == 0:
-            scen = 'next'
-    
+        if (player.x == 14 and player.y == 6) and self.enemyNum == 0:
+            game.scen = 'next'
+
+
     def next(self):
-        pass
+        screen.fill(BLACK)
+
+        for i in range(len(menu_bg)):
+            for j in range(len(menu_bg[i])):
+                screen.blit(asset[items[menu_bg[i][j]]], (j * cwid, i * chig))
+
+        if button(450,450,150,50,'NEXT>',38):
+            self.lvl += 1
+            self.new = True
+            self.scen = 'game'
+
         
 game = Game()
 
@@ -389,6 +432,8 @@ class Enemy(pygame.sprite.Sprite):
         self.image.set_colorkey((0,0,0))
         self.rect = self.image.get_rect(center = (self.x * cwid + (cwid / 2), self.y * chig + (chig / 2)))
         self.hp = hp
+        if self.hp > 10:
+            self.hp = 10
         self.target = None
         self.fps = None
         game.enemyNum += 1
@@ -429,7 +474,7 @@ class Enemy(pygame.sprite.Sprite):
                     self.target.append(3)
                 # print(self.x,self.y,self.target)
 
-                self.target = self.target[random.randint(0,(len(self.target)-1))] 
+                self.target = self.target[randint(0,(len(self.target)-1))] 
                 # print(self.target)
 
                 mapp[self.y][self.x] = 3
@@ -455,8 +500,6 @@ class Enemy(pygame.sprite.Sprite):
         except:
             pass
 
-enemyGroupe.add(Enemy(7,6,10))
-enemyGroupe.add(Enemy(1,7,4))
 
 
 
@@ -488,8 +531,6 @@ def main(screen, mapp, frame):
 
             if event.type == pygame.MOUSEBUTTONUP:
                 click = True
-
-        print(game.enemyNum)
 
 
         # key events
