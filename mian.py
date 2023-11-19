@@ -11,7 +11,6 @@ wid = 800 # * 0.015 = 12
 hig = 600 # * 0.015 = 9
 phat = __file__[0:len(__file__)-7]
 FPS = 60
-scen = 'menu'
 
 cwid = wid / 16
 chig = hig / 12
@@ -24,6 +23,7 @@ GREEN = (0, 255, 0)
 RED = (255,0,0)
 BLUE = (0, 0, 255)
 PURPLE = (157, 0, 255)
+
 
 # screen
 screen = pygame.display.set_mode((wid,hig))
@@ -230,6 +230,155 @@ class Bullet(pygame.sprite.Sprite):
         
 
 
+class Game():
+    def __init__(self):
+        self.scen = 'menu'
+        self.enemyNum = 0
+        self.lvl = 1
+
+
+    def menu(self):
+        global run
+        #display
+        screen.fill(WHITE)
+
+        for i in range(len(menu_bg)):
+            for j in range(len(menu_bg[i])):
+                screen.blit(asset[items[menu_bg[i][j]]], (j * cwid, i * chig))
+
+
+        player.y = 8
+        player.x = 11
+        player.draw()
+
+        mouse = pygame.mouse.get_pos()
+        mouse = pygame.Rect(mouse[0],mouse[1],1,1) 
+
+        def button(x, y, wid, hig, text,size, textx = 0):
+            button = pygame.Rect(x,y,wid,hig)
+            if button.colliderect(mouse):
+                pygame.draw.rect(screen, BLUE, pygame.Rect(x-5,y-5,wid+10,hig+10), 5)
+
+            pygame.draw.rect(screen, BLACK, button, 5)
+            font = pygame.font.Font(f"{phat}font\\Anton\\Anton-Regular.ttf", size)
+            text = font.render(text, True, BLACK)
+            screen.blit(text,(x+30-textx,y-4))
+
+            press = False
+            if button.colliderect(mouse) and pygame.mouse.get_pressed()[0]:
+                press = True
+
+            return press
+        
+        # play    
+        if button(100,100,250,150,'PLAY',105):
+            player.x = 1
+            player.y = 6
+            game.scen = 'game'
+
+
+        button(100,300,250,50,'SETTINGS',38)
+        
+        if button(100,400,250,50,'QUIT',38):
+            run = False
+
+        # skin change
+        if button(450,400,50,50,'<',38,10) and player.left:
+            player.skin -= 1
+            if player.skin < 0:
+                player.skin = 0
+            player.left = False
+
+        if not button(450,400,50,50,'<',38,10):
+            player.left = True
+        
+        if button(650,400,50,50,'>',38,10) and player.right:
+            player.skin += 1
+            if player.skin > 4:
+                player.skin = 4
+            player.right = False
+        
+        if not button(650,400,50,50,'>',38,10):
+            player.right = True
+
+
+
+    def game(self, frame):
+        key = pygame.key.get_pressed()
+        # save
+        if key[pygame.K_s] and key[pygame.K_LCTRL] and False:
+            mateo.save(mapp, phat + 'mapp\\save.txt')
+
+
+        # shoot
+        if key[pygame.K_SPACE] and (frame / 12) % 1 == 0:
+            bulletGroupe.add(player.shot())
+
+
+        # player move
+        if (key[pygame.K_w] or key[pygame.K_UP]) and (frame / speed) % 1 == 0:
+            player.move('up')
+        
+        if (key[pygame.K_s] or key[pygame.K_DOWN]) and (frame / speed) % 1 == 0:
+            player.move('down')
+
+        if (key[pygame.K_a] or key[pygame.K_LEFT]) and (frame / speed) % 1 == 0:
+            player.move('left')
+
+        if (key[pygame.K_d] or key[pygame.K_RIGHT]) and (frame / speed) % 1 == 0:
+            player.move('right')
+
+
+
+        if key[pygame.K_k] and (frame / speed) % 1 == 0:
+            if player.skin > 0:
+                player.skin -= 1
+        if key[pygame.K_l] and (frame / speed) % 1 == 0:
+                if player.skin < 4:
+                    player.skin += 1
+
+
+        #display
+        screen.fill(WHITE)
+
+        for i in range(len(mapp)):
+            for j in range(len(mapp[i])):
+                screen.blit(asset[items[mapp[i][j]]], (j * cwid, i * chig))
+        
+        bulletGroupe.draw(screen)
+        bulletGroupe.update()
+
+        enemyGroupe.draw(screen)
+        enemyGroupe.update()
+
+        player.draw()
+        
+
+        # line
+        if False:
+            for i in range(len(mapp[0])):
+                pygame.draw.line(screen, PURPLE, (i * cwid, 0), (i * cwid, hig), 1)
+            for i in range(len(mapp)):
+                pygame.draw.line(screen, PURPLE, (0, i * chig), (wid, i * chig), 1)
+            
+
+        #mouse
+        mouse =  pygame.mouse.get_pos()
+        j = mouse[0] // (cwid)
+        i = mouse[1] // (chig)
+
+        pygame.draw.rect(screen, WHITE, (j * cwid, i * chig, cwid, chig), 2)
+
+        if (player.x == 0 and player.y == 0) and self.enemyNum == 0:
+            scen = 'next'
+    
+    def next(self):
+        pass
+        
+game = Game()
+
+
+
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y, hp):
         super().__init__()
@@ -242,6 +391,7 @@ class Enemy(pygame.sprite.Sprite):
         self.hp = hp
         self.target = None
         self.fps = None
+        game.enemyNum += 1
  
 
     def update(self):
@@ -251,6 +401,8 @@ class Enemy(pygame.sprite.Sprite):
         if pygame.sprite.groupcollide(bulletGroupe, enemyGroupe, True, False):
             self.hp -= 1
             if self.hp <= 0:
+                mapp[self.y][self.x] = 3
+                game.enemyNum -= 1
                 self.kill()
 
 
@@ -280,6 +432,7 @@ class Enemy(pygame.sprite.Sprite):
                 self.target = self.target[random.randint(0,(len(self.target)-1))] 
                 # print(self.target)
 
+                mapp[self.y][self.x] = 3
                 match self.target:
                     case 0:
                         self.y += 1 
@@ -289,6 +442,7 @@ class Enemy(pygame.sprite.Sprite):
                         self.y -= 1
                     case 3:
                         self.x -= 1
+                mapp[self.y][self.x] = 1
 
 
                 self.target = None
@@ -302,141 +456,7 @@ class Enemy(pygame.sprite.Sprite):
             pass
 
 enemyGroupe.add(Enemy(7,6,10))
-
-
-
-def menu():
-    global scen, run
-    #display
-    screen.fill(WHITE)
-
-    for i in range(len(menu_bg)):
-        for j in range(len(menu_bg[i])):
-            screen.blit(asset[items[menu_bg[i][j]]], (j * cwid, i * chig))
-
-
-    player.y = 8
-    player.x = 11
-    player.draw()
-
-    mouse = pygame.mouse.get_pos()
-    mouse = pygame.Rect(mouse[0],mouse[1],1,1) 
-
-    def button(x, y, wid, hig, text,size, textx = 0):
-        button = pygame.Rect(x,y,wid,hig)
-        if button.colliderect(mouse):
-            pygame.draw.rect(screen, BLUE, pygame.Rect(x-5,y-5,wid+10,hig+10), 5)
-
-        pygame.draw.rect(screen, BLACK, button, 5)
-        font = pygame.font.Font(f"{phat}font\\Anton\\Anton-Regular.ttf", size)
-        text = font.render(text, True, BLACK)
-        screen.blit(text,(x+30-textx,y-4))
-
-        press = False
-        if button.colliderect(mouse) and pygame.mouse.get_pressed()[0]:
-            press = True
-
-        return press
-    
-    # play    
-    if button(100,100,250,150,'PLAY',105):
-        player.x = 1
-        player.y = 6
-        scen = 'game'
-
-
-    button(100,300,250,50,'SETTINGS',38)
-    
-    if button(100,400,250,50,'QUIT',38):
-        run = False
-
-    # skin change
-    if button(450,400,50,50,'<',38,10) and player.left:
-        player.skin -= 1
-        if player.skin < 0:
-            player.skin = 0
-        player.left = False
-
-    if not button(450,400,50,50,'<',38,10):
-        player.left = True
-    
-    if button(650,400,50,50,'>',38,10) and player.right:
-        player.skin += 1
-        if player.skin > 4:
-            player.skin = 4
-        player.right = False
-     
-    if not button(650,400,50,50,'>',38,10):
-        player.right = True
-
-
-
-def game(frame):
-    key = pygame.key.get_pressed()
-    # save
-    if key[pygame.K_s] and key[pygame.K_LCTRL] and False:
-        mateo.save(mapp, phat + 'mapp\\save.txt')
-
-
-    # shoot
-    if key[pygame.K_SPACE] and (frame / 12) % 1 == 0:
-        bulletGroupe.add(player.shot())
-
-
-    # player move
-    if (key[pygame.K_w] or key[pygame.K_UP]) and (frame / speed) % 1 == 0:
-        player.move('up')
-    
-    if (key[pygame.K_s] or key[pygame.K_DOWN]) and (frame / speed) % 1 == 0:
-        player.move('down')
-
-    if (key[pygame.K_a] or key[pygame.K_LEFT]) and (frame / speed) % 1 == 0:
-        player.move('left')
-
-    if (key[pygame.K_d] or key[pygame.K_RIGHT]) and (frame / speed) % 1 == 0:
-        player.move('right')
-
-
-
-    if key[pygame.K_k] and (frame / speed) % 1 == 0:
-        if player.skin > 0:
-            player.skin -= 1
-    if key[pygame.K_l] and (frame / speed) % 1 == 0:
-            if player.skin < 4:
-                player.skin += 1
-
-
-    #display
-    screen.fill(WHITE)
-
-    for i in range(len(mapp)):
-        for j in range(len(mapp[i])):
-            screen.blit(asset[items[mapp[i][j]]], (j * cwid, i * chig))
-    
-    bulletGroupe.draw(screen)
-    bulletGroupe.update()
-
-    enemyGroupe.draw(screen)
-    enemyGroupe.update()
-
-    player.draw()
-    
-
-    # line
-    if False:
-        for i in range(len(mapp[0])):
-            pygame.draw.line(screen, PURPLE, (i * cwid, 0), (i * cwid, hig), 1)
-        for i in range(len(mapp)):
-            pygame.draw.line(screen, PURPLE, (0, i * chig), (wid, i * chig), 1)
-        
-
-    #mouse
-    mouse =  pygame.mouse.get_pos()
-    j = mouse[0] // (cwid)
-    i = mouse[1] // (chig)
-
-    pygame.draw.rect(screen, WHITE, (j * cwid, i * chig, cwid, chig), 2)
-    
+enemyGroupe.add(Enemy(1,7,4))
 
 
 
@@ -469,6 +489,7 @@ def main(screen, mapp, frame):
             if event.type == pygame.MOUSEBUTTONUP:
                 click = True
 
+        print(game.enemyNum)
 
 
         # key events
@@ -477,10 +498,12 @@ def main(screen, mapp, frame):
             run = False
             break
 
-        if scen == 'game':
-            game(frame)
-        elif scen == 'menu':
-            menu()
+        if game.scen == 'game':
+            game.game(frame)
+        elif game.scen == 'menu':
+            game.menu()
+        elif game.scen == 'next':
+            game.next()
 
 
 
