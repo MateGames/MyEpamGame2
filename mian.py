@@ -43,8 +43,8 @@ for i in range(10):
 hp_bar = mateo.loadImg('assets.png', helt, 2)
 
 # load mapps
-mapp = mateo.load(phat + 'mapp\\save.txt')
 menu_bg = mateo.load(phat + 'mapp\\menu.txt')
+
 
 def paint(mapp):
     mouse =  pygame.mouse.get_pos()
@@ -73,19 +73,19 @@ class Player():
     def move(self, dir):
         match dir:
             case 'up':
-                if mapp[self.y - 1][self.x]  == 3:
+                if game.room[self.y - 1][self.x]  == 3:
                     self.y -= 1
         
             case 'down':
-                if mapp[self.y + 1][self.x]  == 3:
+                if game.room[self.y + 1][self.x]  == 3:
                     self.y += 1
 
             case 'right':
-                if mapp[self.y][self.x + 1]  == 3:
+                if game.room[self.y][self.x + 1]  == 3:
                     self.x += 1
 
             case 'left':
-                if mapp[self.y][self.x - 1]  == 3:
+                if game.room[self.y][self.x - 1]  == 3:
                     self.x -= 1
 
     def shot(self):
@@ -255,6 +255,12 @@ class Game():
         self.enemyNum = 0
         self.lvl = 1
         self.new = True
+        self.rooms = []
+
+        for i in range(2):
+            self.rooms.append(mateo.load(phat + f'mapp\\room{i}.txt'))
+
+        self.room = self.rooms[0]
 
 
     def menu(self):
@@ -312,7 +318,7 @@ class Game():
             player.y = 6
 
             random = [randint(5,14), randint(1,10)]
-            while mapp[random[1]][random[0]] != 3:
+            while game.room[random[1]][random[0]] != 3:
                 random = [randint(5,14), randint(1,10)]
                 print('relocate enemy')
             
@@ -322,12 +328,15 @@ class Game():
             enemyGroupe.add(Enemy(randint(5,14), randint(1,10), randint(hp - randint(0, int(hp / 4)), hp)))
             self.new = False
 
+            self.room = self.rooms[randint(0,len(self.rooms)-1)]
+
             #more enemy?
             #random mapp
 
 
         key = pygame.key.get_pressed()
         # save
+        #not working
         if key[pygame.K_s] and key[pygame.K_LCTRL] and False:
             mateo.save(mapp, phat + 'mapp\\save.txt')
 
@@ -363,9 +372,9 @@ class Game():
         #display
         screen.fill(WHITE)
 
-        for i in range(len(mapp)):
-            for j in range(len(mapp[i])):
-                screen.blit(asset[items[mapp[i][j]]], (j * cwid, i * chig))
+        for i in range(len(self.room)):
+            for j in range(len(self.room[i])):
+                screen.blit(asset[items[self.room[i][j]]], (j * cwid, i * chig))
         
         bulletGroupe.draw(screen)
         bulletGroupe.update()
@@ -377,6 +386,7 @@ class Game():
         
 
         # line and number
+        #mapp fix -> room
         if False:
             for i in range(len(mapp[0])):
                 pygame.draw.line(screen, PURPLE, (i * cwid, 0), (i * cwid, hig), 1)
@@ -446,7 +456,7 @@ class Enemy(pygame.sprite.Sprite):
         if pygame.sprite.groupcollide(bulletGroupe, enemyGroupe, True, False):
             self.hp -= 1
             if self.hp <= 0:
-                mapp[self.y][self.x] = 3
+                game.room[self.y][self.x] = 3
                 game.enemyNum -= 1
                 self.kill()
 
@@ -464,20 +474,20 @@ class Enemy(pygame.sprite.Sprite):
             self.fps += 1
             if self.fps == 60:
                 self.target = []
-                if mapp[self.y + 1][self.x] == 3:
+                if game.room[self.y + 1][self.x] == 3:
                     self.target.append(0)
-                if mapp[self.y][self.x + 1] == 3:
+                if game.room[self.y][self.x + 1] == 3:
                     self.target.append(1)
-                if mapp[self.y - 1][self.x] == 3:
+                if game.room[self.y - 1][self.x] == 3:
                     self.target.append(2)
-                if mapp[self.y][self.x - 1] == 3:
+                if game.room[self.y][self.x - 1] == 3:
                     self.target.append(3)
                 # print(self.x,self.y,self.target)
 
                 self.target = self.target[randint(0,(len(self.target)-1))] 
                 # print(self.target)
 
-                mapp[self.y][self.x] = 3
+                game.room[self.y][self.x] = 3
                 match self.target:
                     case 0:
                         self.y += 1 
@@ -487,7 +497,7 @@ class Enemy(pygame.sprite.Sprite):
                         self.y -= 1
                     case 3:
                         self.x -= 1
-                mapp[self.y][self.x] = 1
+                game.room[self.y][self.x] = 1
 
 
                 self.target = None
@@ -508,7 +518,7 @@ frame = 0
 speed = 7
 
 key = pygame.key.get_pressed()
-def main(screen, mapp, frame):
+def main(screen, frame):
     clock = pygame.time.Clock()
     global run
 
@@ -557,7 +567,7 @@ def main(screen, mapp, frame):
     quit()
 
 if __name__ == '__main__':
-    main(screen, mapp, frame)
+    main(screen,frame)
 
 
 
