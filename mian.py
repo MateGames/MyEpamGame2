@@ -30,8 +30,48 @@ screen = pygame.display.set_mode((wid,hig))
 pygame.display.set_caption("Epam2.0")
 
 
+def save(mapp, phat):
+    with open(phat, 'w') as f:
+        for i in range(len(mapp)):
+            world = ''
+            for j in range(len(mapp[i])):
+                world += str(mapp[i][j])
+            world += '\n'
+            f.write(world)
+
+
+
+def load(phat):
+    mapp = []
+    with open(phat, 'r') as f:
+        for line in f:
+            mapp.append([])
+            for i in range(len(line)-1):
+                mapp[len(mapp)-1].append(int(line[i]))
+
+    return mapp
+
+
+
+def loadImg(sheet, imgs, line):
+    asset = {}
+    sheet = pygame.image.load(f'{phat}\\img\\{sheet}').convert_alpha()
+    sheet = pygame.transform.scale(sheet, (500, 150))
+
+    def getImg(sheet, wid, hig, frame, line):
+        img = pygame.Surface((wid, hig)).convert_alpha()
+        img.blit(sheet, (0, 0), ((frame * wid), (line * hig), wid, hig))
+        img.set_colorkey((0,0,0))
+        return img
+
+    for i in range(len(imgs)):
+        asset.update({imgs[i] : getImg(sheet, 50, 50, i, line)})
+
+    return asset
+
+
 #load img
-items = ['barrier', 'dore1', 'dore2', 'flore', 'player', 'dore3', 'dore4', 'wall', 'bullet']
+items = ['barrier', 'dore1', 'dore2', 'flore', 'dore3', 'dore4', 'wall', 'bullet']
 asset = mateo.loadImg('assets.png', items, 0)
 
 lod = ['playerP', 'playerB', 'playerY', 'playerR', 'playerPI','enemy']
@@ -41,6 +81,7 @@ helt = []
 for i in range(10):
     helt.append(str(i+1))
 hp_bar = mateo.loadImg('assets.png', helt, 2)
+
 
 # load mapps
 menu_bg = mateo.load(phat + 'mapp\\menu.txt')
@@ -106,7 +147,7 @@ class Bullet(pygame.sprite.Sprite):
         self.realY = y
         self.speed = 1 
         self.image = pygame.Surface((cwid, chig))
-        self.image.blit(asset['wall'], (0,0))
+        self.image.blit(asset['bullet'], (0,0))
         self.image.set_colorkey((0,0,0))
         self.rect = self.image.get_rect(center = (-10, -10))
 
@@ -330,8 +371,9 @@ class Game():
 
             self.room = self.rooms[randint(0,len(self.rooms)-1)]
 
-            #more enemy?
-            #random mapp
+            # ongoing:
+                #more enemy?
+                #random mapp: need more mapp
 
 
         key = pygame.key.get_pressed()
@@ -386,21 +428,20 @@ class Game():
         
 
         # line and number
-        #mapp fix -> room
         if False:
-            for i in range(len(mapp[0])):
+            for i in range(len(self.room[0])):
                 pygame.draw.line(screen, PURPLE, (i * cwid, 0), (i * cwid, hig), 1)
-            for i in range(len(mapp)):
+            for i in range(len(self.room)):
                 pygame.draw.line(screen, PURPLE, (0, i * chig), (wid, i * chig), 1)
 
 
             font = pygame.font.Font(f"{phat}font\\Anton\\Anton-Regular.ttf", 15)
 
-            for i in range(len(mapp)):
-                for j in range(len(mapp[i])):
-                    text = font.render(str(mapp[i][j]), True, BLACK)
+            for i in range(len(self.room)):
+                for j in range(len(self.room[i])):
+                    text = font.render(str(self.room[i][j]), True, BLACK)
                     screen.blit(text,(j*50 + 20, i*50))
-                    text = font.render(str(items[mapp[i][j]]), True, BLACK)
+                    text = font.render(str(items[self.room[i][j]]), True, BLACK)
                     screen.blit(text,(j*50 + 10, i*50 + 20))
             
 
@@ -426,6 +467,12 @@ class Game():
             self.lvl += 1
             self.new = True
             self.scen = 'game'
+        
+        text = f'LVL{self.lvl} >>> LVL{self.lvl + 1}'
+        button(250,200,250,50,text,38)
+
+
+
 
         
 game = Game()
