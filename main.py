@@ -1,7 +1,6 @@
 import pygame
-import math
+from math import atan2, degrees
 from random import randint
-from time import sleep
 pygame.init()
 
 
@@ -70,10 +69,10 @@ def loadImg(sheet, imgs, line):
 
 
 #load img
-items = ['barrier', 'dore1', 'dore2', 'flore', 'dore3', 'dore4', 'wall', 'bullet']
+items = ['barrier', 'dore1', 'dore2', 'flore', 'dore3', 'dore4', 'wall', 'bullet', 'reaktor', 'oil']
 asset = loadImg('assets.png', items, 0)
 
-lod = ['playerP', 'playerB', 'playerY', 'playerR', 'playerPI','enemy']
+lod = ['playerP', 'playerB', 'playerY', 'playerR', 'playerPI','enemy','shild']
 characters = loadImg('assets.png', lod, 1)
 
 helt = []
@@ -99,16 +98,42 @@ def paint(mapp):
     return mapp
 
 
-class Player():
+class Player(pygame.sprite.Sprite):
     def __init__(self):
+        super().__init__()
         self.x = 1
         self.y = 6
         self.skin = 0
+        self.image = pygame.Surface((cwid, chig))
+        self.image.blit(characters[lod[self.skin]], (0,0))
+        self.image.set_colorkey((0,0,0))
+        self.rect = self.image.get_rect(center = (self.x * cwid + (cwid / 2), self.y * chig + (chig / 2)))
         self.right = True
         self.left = True
+        self.shild = True
+        self.lastShot = 0
+        # upgrade
+        self.shootSpeed = 10
+
 
     def draw(self):
         screen.blit(characters[lod[self.skin]], (self.x * cwid, self.y * chig))
+        if self.shild:
+            screen.blit(characters['shild'], (self.x * cwid, self.y * chig))
+
+
+    def update(self):
+        self.rect = self.image.get_rect(center = (self.x * cwid + (cwid / 2), self.y * chig + (chig / 2)))
+
+        if self.lastShot > 0:
+            self.lastShot -= 1
+
+        if pygame.sprite.groupcollide(enemyBulletGroupe, playerGroupe, True, False):
+            if self.shild:
+                self.shild = False
+            else:
+                print('die')
+
 
     def move(self, dir):
         match dir:
@@ -129,16 +154,30 @@ class Player():
                     self.x -= 1
 
     def shot(self):
-        return Bullet(self.x, self.y)
+        '''
+        shoot speed:
+        lvl1 30
+        lvl2 20
+        lvl3 10
+        '''
+
+        if self.lastShot == 0:
+            self.lastShot += self.shootSpeed
+            bulletGroupe.add(Bullet(self.x, self.y,'player'))
 
     
 
 player = Player()
+
+playerGroupe = pygame.sprite.Group()
 enemyGroupe = pygame.sprite.Group()
 bulletGroupe = pygame.sprite.Group()
+enemyBulletGroupe = pygame.sprite.Group()
+
+playerGroupe.add(player)
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, owner):
         super().__init__()
         self.x = x
         self.realX = x
@@ -149,15 +188,28 @@ class Bullet(pygame.sprite.Sprite):
         self.image.blit(asset['bullet'], (0,0))
         self.image.set_colorkey((0,0,0))
         self.rect = self.image.get_rect(center = (-10, -10))
+        self.owner = owner
 
         # bulet dir
-        mouse = pygame.mouse.get_pos()
-        mid = [player.x * cwid + 25, player.y * chig + 25]
+        # owner: player
+        if self.owner == 'player':
+            mouse = pygame.mouse.get_pos()
+            mid = [player.x * cwid + 25, player.y * chig + 25]
 
-        angle = math.atan2(mouse[0] - mid[0], mouse[1] - mid[1])
-        angle = int(math.degrees(angle))
-        if angle < 0: 
-            angle += 360              
+            angle = atan2(mouse[0] - mid[0], mouse[1] - mid[1])
+            angle = int(degrees(angle))
+            if angle < 0: 
+                angle += 360
+
+        # owner: enemy
+        else:
+            target = player.x, player.y
+            me = self.x, self.y
+            angle = atan2(target[0] - me[0], target[1] - me[1])
+            angle = int(degrees(angle))
+
+            if angle < 0: 
+                angle += 360
 
         
         # down
@@ -256,17 +308,21 @@ class Bullet(pygame.sprite.Sprite):
                     self.realY += 0.5 / speed
                     self.realX -= 0.5 / speed
                     self.rect = self.image.get_rect(center = ((self.x  * cwid + (cwid / 2), self.y * chig + (chig / 2))))
-        
+            
         except:
             pass
 
 
         # self kill 
-        if 1 >= self.x or self.x >= 14:
+        if 0 >= self.x or self.x >  14:
             self.kill()
         
-        if 1 >= self.y or self.y >= 10:
+        if 0 >= self.y or self.y > 10:
             self.kill()
+
+        if game.room[int(self.y)][int(self.x)] != 3 and  game.room[int(self.y)][int(self.x)] != 7:
+            self.kill()
+
 
 
 def button(x, y, wid, hig, text,size, textx = 0):
@@ -297,7 +353,7 @@ class Game():
         self.new = True
         self.rooms = []
 
-        for i in range(2):
+        for i in range(4):
             self.rooms.append(load(phat + f'mapp\\room{i}.txt'))
 
         self.room = self.rooms[0]
@@ -357,9 +413,9 @@ class Game():
             player.x = 1
             player.y = 6
 
-            random = [randint(5,14), randint(1,10)]
+            random = [randint(7,14), randint(1,10)]
             while game.room[random[1]][random[0]] != 3:
-                random = [randint(5,14), randint(1,10)]
+                random = [randint(7,14), randint(1,10)]
                 print('relocate enemy')
             
             hp = self.lvl
@@ -383,8 +439,8 @@ class Game():
 
 
         # shoot
-        if key[pygame.K_SPACE] and (frame / 12) % 1 == 0:
-            bulletGroupe.add(player.shot())
+        if key[pygame.K_SPACE]:
+            player.shot()
 
 
         # player move
@@ -420,10 +476,14 @@ class Game():
         bulletGroupe.draw(screen)
         bulletGroupe.update()
 
+        enemyBulletGroupe.draw(screen)
+        enemyBulletGroupe.update()
+
         enemyGroupe.draw(screen)
         enemyGroupe.update()
 
         player.draw()
+        player.update()
         
 
         # line and number
@@ -462,13 +522,18 @@ class Game():
             for j in range(len(menu_bg[i])):
                 screen.blit(asset[items[menu_bg[i][j]]], (j * cwid, i * chig))
 
-        if button(450,450,150,50,'NEXT>',38):
+        text = f'Congratulations you finished room{self.lvl}!'
+        button(100,100,600,50,text,38)
+
+        if button(500,450,150,50,'NEXT>',38):
             self.lvl += 1
             self.new = True
             self.scen = 'game'
         
-        text = f'LVL{self.lvl} >>> LVL{self.lvl + 1}'
-        button(250,200,250,50,text,38)
+        text = f'ROOM{self.lvl} >>> ROOM{self.lvl + 1}'
+        button(250,200,300,50,text,38)
+
+
 
 
 
@@ -507,13 +572,10 @@ class Enemy(pygame.sprite.Sprite):
                 self.kill()
 
 
-        # show dir
-        pass
-
 
         # move
-        if self.fps == None:
-            self.fps = 0
+        if self.target == None:
+            self.fps = 1
             self.target = []
 
         else:
@@ -543,11 +605,10 @@ class Enemy(pygame.sprite.Sprite):
                         self.y -= 1
                     case 3:
                         self.x -= 1
-                game.room[self.y][self.x] = 1
+                game.room[self.y][self.x] = 7
 
 
                 self.target = None
-                self.fps = None 
         
 
         # HP
@@ -555,6 +616,14 @@ class Enemy(pygame.sprite.Sprite):
             screen.blit(hp_bar[str(self.hp)], (self.x  * cwid + (cwid / 2) - 25, self.y * chig + (chig / 2) - 75))
         except:
             pass
+
+
+        # shoot
+        if self.x == player.x:
+            pass
+        
+        if (self.fps % 20) == 0:
+            enemyBulletGroupe.add(Bullet(self.x,self.y, 'enemy'))
 
 
 
