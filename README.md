@@ -4,8 +4,6 @@
 
 ## A játék letöltéséhez kattints ide: [**[DOWNLOAD](https://github.com/MateGames/MyEpamGame2/releases/latest)**]
 
-helo world
-
 ## Irányítás
 - wasd-vel és a nyilakkal tudod irányitani a karaktert
 - space a lövés (a karaktered mindig abba az irányba lő amerre az egered van)
