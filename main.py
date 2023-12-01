@@ -110,10 +110,11 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center = (self.x * cwid + (cwid / 2), self.y * chig + (chig / 2)))
         self.right = True
         self.left = True
-        self.shild = True
         self.lastShot = 0
         # upgrade
-        self.shootSpeed = 10
+        self.money = 0
+        self.shootSpeed = 30
+        self.shild = True
 
 
     def draw(self):
@@ -160,7 +161,6 @@ class Player(pygame.sprite.Sprite):
         lvl2 20
         lvl3 10
         '''
-
         if self.lastShot == 0:
             self.lastShot += self.shootSpeed
             bulletGroupe.add(Bullet(self.x, self.y,'player'))
@@ -325,13 +325,13 @@ class Bullet(pygame.sprite.Sprite):
 
 
 
-def button(x, y, wid, hig, text,size, textx = 0):
+def button(x, y, wid, hig, text,size, textx = 0, color = BLUE):
     mouse = pygame.mouse.get_pos()
     mouse = pygame.Rect(mouse[0],mouse[1],1,1) 
 
     button = pygame.Rect(x,y,wid,hig)
-    if button.colliderect(mouse):
-        pygame.draw.rect(screen, BLUE, pygame.Rect(x-5,y-5,wid+10,hig+10), 5)
+    if button.colliderect(mouse) and color != BLACK:
+        pygame.draw.rect(screen, color, pygame.Rect(x-5,y-5,wid+10,hig+10), 5)
 
     pygame.draw.rect(screen, BLACK, button, 5)
     font = pygame.font.Font(f"{phat}font\\Anton\\Anton-Regular.ttf", size)
@@ -347,13 +347,13 @@ def button(x, y, wid, hig, text,size, textx = 0):
 
 class Game():
     def __init__(self):
-        self.scen = 'menu'
+        self.scen = 'next'
         self.enemyNum = 0
         self.lvl = 1
         self.new = True
         self.rooms = []
 
-        for i in range(4):
+        for i in range(7):
             self.rooms.append(load(phat + f'mapp\\room{i}.txt'))
 
         self.room = self.rooms[0]
@@ -518,27 +518,66 @@ class Game():
     def next(self):
         screen.fill(BLACK)
 
+        # genrate bg
         for i in range(len(menu_bg)):
             for j in range(len(menu_bg[i])):
                 screen.blit(asset[items[menu_bg[i][j]]], (j * cwid, i * chig))
 
-        text = f'Congratulations you finished room{self.lvl}!'
-        button(100,100,600,50,text,38)
 
-        if button(500,450,150,50,'NEXT>',38):
+        # congrat text
+        text = f'Congratulations you finished room{self.lvl}!'
+        button(100,100,600,50,text,38,0,BLACK)
+
+
+        # next
+        if button(550,450,150,50,'NEXT>',38):
             self.lvl += 1
             self.new = True
             self.scen = 'game'
-        
+
+
+        # room -> room
         text = f'ROOM{self.lvl} >>> ROOM{self.lvl + 1}'
-        button(250,200,300,50,text,38)
+        button(150,200,300,50,text,38,0,BLACK)
 
 
+        # coin
+        text = f'{player.money} COIN'
+        button(500,200,150,50,text,38,5,BLACK)
 
 
-
-
+        # shotspeed lvl up
+        num = [4,3,2,1]
+        text = f'Faster shot | 10 COIN | LVL {num[int(player.shootSpeed / 10)]}'
+        if player.shootSpeed != 10:
+            if player.money >= 10:
+                if button(100,350,450,50,text,38,0,GREEN):
+                    player.money -= 10
+                    player.shootSpeed -= 10
+            else:
+                button(100,350,450,50,text,38,0,RED)
         
+        else:
+            text = 'Faster shot | LVL 3 (MAX)'
+            button(100,350,450,50,text,38,0,BLACK)
+
+
+        # buy shild
+        text = f'Shild | 10 COIN'
+        if not player.shild:
+            if player.money >= 10:
+                if button(100,450,250,50,text,38,0,GREEN):
+                    player.money -= 10
+                    player.shild = True
+            else:
+                button(100,450,250,50,text,38,0,RED)
+        
+        else:
+            text = f'You have a shield!'
+            button(100,450,350,50,text,38,0,BLACK)
+
+
+
 game = Game()
 
 
@@ -569,6 +608,7 @@ class Enemy(pygame.sprite.Sprite):
             if self.hp <= 0:
                 game.room[self.y][self.x] = 3
                 game.enemyNum -= 1
+                player.money += 5
                 self.kill()
 
 
