@@ -114,7 +114,7 @@ class Player(pygame.sprite.Sprite):
         # upgrade
         self.money = 0
         self.shootSpeed = 30
-        self.shild = True
+        self.shild = False
 
 
     def draw(self):
@@ -133,7 +133,7 @@ class Player(pygame.sprite.Sprite):
             if self.shild:
                 self.shild = False
             else:
-                print('die')
+                game.scen = 'lose'
 
 
     def move(self, dir):
@@ -155,12 +155,6 @@ class Player(pygame.sprite.Sprite):
                     self.x -= 1
 
     def shot(self):
-        '''
-        shoot speed:
-        lvl1 30
-        lvl2 20
-        lvl3 10
-        '''
         if self.lastShot == 0:
             self.lastShot += self.shootSpeed
             bulletGroupe.add(Bullet(self.x, self.y,'player'))
@@ -347,7 +341,7 @@ def button(x, y, wid, hig, text,size, textx = 0, color = BLUE):
 
 class Game():
     def __init__(self):
-        self.scen = 'next'
+        self.scen = 'lose'
         self.enemyNum = 0
         self.lvl = 1
         self.new = True
@@ -376,9 +370,16 @@ class Game():
         
         # play    
         if button(100,100,250,150,'PLAY',105):
+            self.money = 0
+            self.shootSpeed = 30
+            self.shild = False
+            
             player.x = 1
             player.y = 6
             game.scen = 'game'
+
+            self.new = True
+            self.lvl = 1
 
 
         button(100,300,250,50,'SETTINGS',38)
@@ -406,14 +407,15 @@ class Game():
             player.right = True
 
 
-
     def game(self, frame):
         #reset/next room shuffle
         if self.new:
+            self.room = self.rooms[randint(0,len(self.rooms)-1)]
+
             player.x = 1
             player.y = 6
 
-            random = [randint(7,14), randint(1,10)]
+            random = [randint(9,14), randint(1,10)]
             while game.room[random[1]][random[0]] != 3:
                 random = [randint(7,14), randint(1,10)]
                 print('relocate enemy')
@@ -424,8 +426,7 @@ class Game():
             enemyGroupe.add(Enemy(randint(5,14), randint(1,10), randint(hp - randint(0, int(hp / 4)), hp)))
             self.new = False
 
-            self.room = self.rooms[randint(0,len(self.rooms)-1)]
-
+            
             # ongoing:
                 #more enemy?
                 #random mapp: need more mapp
@@ -577,6 +578,37 @@ class Game():
             button(100,450,350,50,text,38,0,BLACK)
 
 
+    def lose(self):
+        screen.fill(BLACK)
+
+        # genrate bg
+        for i in range(len(menu_bg)):
+            for j in range(len(menu_bg[i])):
+                screen.blit(asset[items[menu_bg[i][j]]], (j * cwid, i * chig))
+
+        
+        # congrat text
+        text = f'You lost!'
+        button(250,100,300,100,text,70,0,BLACK)
+
+
+        # roomX
+        text = f'ROOM{game.lvl}'
+        button(200,250,150,50,text,38,0,BLACK)
+
+
+        # roomX
+        text = f'{(game.lvl-1)*5} COIN'
+        button(450,250,150,50,text,38,5,BLACK)
+
+
+        # back to menu
+        text = f'MENU'
+        if button(300,450,200,50,text,38,-30):
+            enemyGroupe.update()
+            game.scen = 'menu'
+        
+
 
 game = Game()
 
@@ -611,6 +643,11 @@ class Enemy(pygame.sprite.Sprite):
                 player.money += 5
                 self.kill()
 
+
+        if game.scen == 'lose':
+            game.room[self.y][self.x] = 3
+            game.enemyNum -= 1
+            self.kill()
 
 
         # move
@@ -659,10 +696,7 @@ class Enemy(pygame.sprite.Sprite):
 
 
         # shoot
-        if self.x == player.x:
-            pass
-        
-        if (self.fps % 20) == 0:
+        if (self.fps % 30) == 0:
             enemyBulletGroupe.add(Bullet(self.x,self.y, 'enemy'))
 
 
@@ -704,13 +738,15 @@ def main(screen, frame):
             run = False
             break
 
-        if game.scen == 'game':
-            game.game(frame)
-        elif game.scen == 'menu':
-            game.menu()
-        elif game.scen == 'next':
-            game.next()
-
+        match game.scen:
+            case 'game':
+                game.game(frame)
+            case 'menu':
+                game.menu()
+            case 'next':
+                game.next()
+            case 'lose':
+                game.lose()
 
 
         if frame == 60:

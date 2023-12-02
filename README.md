@@ -5,7 +5,7 @@
 ## A játék letöltéséhez kattints ide: [**[DOWNLOAD](https://github.com/MateGames/MyEpamGame2/releases/latest)**]
 
 ## Irányítás
--  <font size='3' style='color: red'>🅆 🄰 🅂 🄳</font>-vel és a ⬆️⬅️⬇️➡️-kal tudod irányitani a karaktert
+-  <font size='3'>🅆 🄰 🅂 🄳</font>-vel vagy a ⬆️⬅️⬇️➡️-kal tudod irányitani a karaktert
 - space a lövés (a karaktered mindig abba az irányba lő amerre az egered van)
 
 ## Játékmenet
