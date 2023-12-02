@@ -5,8 +5,8 @@ pygame.init()
 
 
 # variables
-wid = 800 # * 0.015 = 12
-hig = 600 # * 0.015 = 9
+wid = 800
+hig = 600
 phat = __file__[0:len(__file__)-7]
 FPS = 60
 
@@ -38,7 +38,6 @@ def save(mapp, phat):
             f.write(world)
 
 
-
 def load(phat):
     mapp = []
     with open(phat, 'r') as f:
@@ -48,7 +47,6 @@ def load(phat):
                 mapp[len(mapp)-1].append(int(line[i]))
 
     return mapp
-
 
 
 def loadImg(sheet, imgs, line):
@@ -89,7 +87,6 @@ def paint(mapp):
     mouse =  pygame.mouse.get_pos()
     j = int(mouse[0] // (cwid))
     i = int(mouse[1] // (chig))
-
   
     mapp[i][j] += 1
     if mapp[i][j] > len(items)-2:
@@ -169,6 +166,7 @@ bulletGroupe = pygame.sprite.Group()
 enemyBulletGroupe = pygame.sprite.Group()
 
 playerGroupe.add(player)
+
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y, owner):
@@ -341,7 +339,7 @@ def button(x, y, wid, hig, text,size, textx = 0, color = BLUE):
 
 class Game():
     def __init__(self):
-        self.scen = 'lose'
+        self.scen = 'menu'
         self.enemyNum = 0
         self.lvl = 1
         self.new = True
@@ -380,6 +378,7 @@ class Game():
 
             self.new = True
             self.lvl = 1
+            player.money = 0
 
 
         button(100,300,250,50,'SETTINGS',38)
@@ -411,6 +410,8 @@ class Game():
         #reset/next room shuffle
         if self.new:
             self.room = self.rooms[randint(0,len(self.rooms)-1)]
+            bulletGroupe.empty()
+            enemyBulletGroupe.empty()
 
             player.x = 1
             player.y = 6
@@ -611,7 +612,6 @@ class Game():
 
 
 game = Game()
-
 
 
 class Enemy(pygame.sprite.Sprite):
