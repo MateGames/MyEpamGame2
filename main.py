@@ -1,4 +1,5 @@
 import pygame
+import webbrowser
 from math import atan2, degrees
 from random import randint
 pygame.init()
@@ -23,9 +24,14 @@ BLUE = (0, 0, 255)
 PURPLE = (157, 0, 255)
 
 
+# icon
+icon = pygame.image.load(f'{phat}\\img\\icon.png')
+pygame.display.set_icon(icon)
+
+
 # screen
 screen = pygame.display.set_mode((wid,hig))
-pygame.display.set_caption("Epam2.0")
+pygame.display.set_caption("MyEpamGame2")
 
 
 def save(mapp, phat):
@@ -199,6 +205,7 @@ class Bullet(pygame.sprite.Sprite):
             me = self.x, self.y
             angle = atan2(target[0] - me[0], target[1] - me[1])
             angle = int(degrees(angle))
+            angle += randint(-50,50)
 
             if angle < 0: 
                 angle += 360
@@ -344,11 +351,17 @@ class Game():
         self.lvl = 1
         self.new = True
         self.rooms = []
+        
+        global reloadMapp
+        def reloadMapp():
+            self.rooms.clear()
+            for i in range(6):
+                self.rooms.append(load(phat + f'mapp\\room{i}.txt'))
 
-        for i in range(7):
-            self.rooms.append(load(phat + f'mapp\\room{i}.txt'))
+            self.room = self.rooms[0]
 
-        self.room = self.rooms[0]
+        reloadMapp()
+        
 
 
     def menu(self):
@@ -368,9 +381,9 @@ class Game():
         
         # play    
         if button(100,100,250,150,'PLAY',105):
-            self.money = 0
-            self.shootSpeed = 30
-            self.shild = False
+            player.money = 0
+            player.shootSpeed = 30
+            player.shild = False
             
             player.x = 1
             player.y = 6
@@ -378,10 +391,10 @@ class Game():
 
             self.new = True
             self.lvl = 1
-            player.money = 0
 
 
-        button(100,300,250,50,'SETTINGS',38)
+        if button(100,300,250,50,'GITHUB',38):
+            webbrowser.open('https://github.com/MateGames/MyEpamGame2')
         
         if button(100,400,250,50,'QUIT',38):
             run = False
@@ -409,6 +422,7 @@ class Game():
     def game(self, frame):
         #reset/next room shuffle
         if self.new:
+            reloadMapp()
             self.room = self.rooms[randint(0,len(self.rooms)-1)]
             bulletGroupe.empty()
             enemyBulletGroupe.empty()
@@ -416,7 +430,8 @@ class Game():
             player.x = 1
             player.y = 6
 
-            random = [randint(9,14), randint(1,10)]
+            # new enemy
+            random = [randint(9,14), randint(2,9)] # x,y
             while game.room[random[1]][random[0]] != 3:
                 random = [randint(7,14), randint(1,10)]
                 print('relocate enemy')
@@ -424,13 +439,9 @@ class Game():
             hp = self.lvl
             if hp > 10:
                 self.hp = 10
-            enemyGroupe.add(Enemy(randint(5,14), randint(1,10), randint(hp - randint(0, int(hp / 4)), hp)))
+            enemyGroupe.add(Enemy(random[0], random[1], randint(hp - randint(0, int(hp / 4)), hp)))
             self.new = False
 
-            
-            # ongoing:
-                #more enemy?
-                #random mapp: need more mapp
 
 
         key = pygame.key.get_pressed()
@@ -696,7 +707,7 @@ class Enemy(pygame.sprite.Sprite):
 
 
         # shoot
-        if (self.fps % 30) == 0:
+        if (self.fps % 60) == 0:
             enemyBulletGroupe.add(Bullet(self.x,self.y, 'enemy'))
 
 
@@ -754,8 +765,6 @@ def main(screen, frame):
 
         #pygame.display.flip()
         pygame.display.update()
-    pygame.quit()
-    quit()
 
 if __name__ == '__main__':
     main(screen,frame)
