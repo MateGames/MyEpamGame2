@@ -26,7 +26,7 @@ Ha beléptél a játékba egyből a menü fogad amiben kiválaszthatod a karakte
 A játék végtelen szóval addig mész ameddig tudsz, próbáld meg megdönteni a rekordjainakt:
 
 - ```Máté[Én] | 8.szoba```
-- ```Virág | 11.szoba```
+- ```Virág | 13.szoba```
 
 
 ## A menüben a nyilakkal kiválaszthatod a karaktered színét
